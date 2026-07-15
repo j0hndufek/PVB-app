@@ -12,7 +12,7 @@ library(dplyr)
 # 1. GLOBAL ECONOMIC / DEMOGRAPHIC ASSUMPTIONS
 # ---------------------------------------------------------------------------
 
-INTEREST_RATE      <- 0.05    # annual valuation discount rate
+INTEREST_RATE      <- 0.065    # annual valuation discount rate
 SALARY_SCALE       <- 0.035   # annual salary growth assumption
 ACCRUAL_RATE       <- 0.016   # benefit accrual % of FAP per year of service
 NRA                <- 65      # normal retirement age
