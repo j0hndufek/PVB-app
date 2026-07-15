@@ -16,7 +16,7 @@ INTEREST_RATE      <- 0.065    # annual valuation discount rate
 SALARY_SCALE       <- 0.035   # annual salary growth assumption
 ACCRUAL_RATE       <- 0.016   # benefit accrual % of FAP per year of service
 NRA                <- 65      # normal retirement age
-MAX_AGE            <- 110     # oldest age in mortality tables (limiting age)
+MAX_AGE            <- 120     # oldest age in mortality tables (limiting age)
 JS_SURVIVOR_PCT     <- 0.50   # % of benefit continuing to spouse under J&S form
 PCT_ELECT_JS        <- 0.70   # % of retirees assumed to elect Joint & Survivor
 DEATH_BENEFIT_MULT  <- 2.0    # pre-retirement death benefit = multiple x pay
