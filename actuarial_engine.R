@@ -34,16 +34,16 @@ get_participant <- function(life_type = c("Current", "Replacement")) {
   if (life_type == "Current") {
     list(
       life_type      = "Current",
-      entry_age      = 30,
-      current_age    = 45,
-      current_salary = 75000
+      entry_age      = 20,
+      current_age    = 24,
+      current_salary = 125593
     )
   } else {
     list(
       life_type      = "Replacement",
-      entry_age      = 25,
-      current_age    = 25,
-      current_salary = 55000
+      entry_age      = 20,
+      current_age    = 24,
+      current_salary = 125593
     )
   }
 }
