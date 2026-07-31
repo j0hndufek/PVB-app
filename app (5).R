@@ -5,9 +5,7 @@
 # see the PVB formula for that benefit laid out age-by-age, then click any
 # component of that formula to see how it was built up.
 #
-# ALL ASSUMPTIONS ARE ILLUSTRATIVE — see actuarial_engine.R. Swap in your
-# firm's real decrement tables, salary scale, benefit formula, etc. before
-# using this for anything beyond training.
+# ALL ASSUMPTIONS ARE ILLUSTRATIVE — see actuarial_engine.R.
 # ============================================================================
 
 library(shiny)
@@ -92,7 +90,6 @@ ui <- fluidPage(
   "))),
 
   titlePanel("Pension Valuation Trainer: Present Value of Benefits (PVB)"),
-  p(em("Illustrative assumptions for training purposes only — not your firm's actual assumption set.")),
 
   fluidRow(
     column(
