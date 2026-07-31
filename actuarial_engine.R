@@ -12,11 +12,11 @@ library(dplyr)
 # 1. GLOBAL ECONOMIC / DEMOGRAPHIC ASSUMPTIONS
 # ---------------------------------------------------------------------------
 
-INTEREST_RATE      <- 0.05    # annual valuation discount rate
+INTEREST_RATE      <- 0.065    # annual valuation discount rate
 SALARY_SCALE       <- 0.035   # annual salary growth assumption
 ACCRUAL_RATE       <- 0.016   # benefit accrual % of FAP per year of service
 NRA                <- 65      # normal retirement age
-MAX_AGE            <- 110     # oldest age in mortality tables (limiting age)
+MAX_AGE            <- 120     # oldest age in mortality tables (limiting age)
 JS_SURVIVOR_PCT     <- 0.50   # % of benefit continuing to spouse under J&S form
 PCT_ELECT_JS        <- 0.70   # % of retirees assumed to elect Joint & Survivor
 DEATH_BENEFIT_MULT  <- 2.0    # pre-retirement death benefit = multiple x pay
@@ -34,22 +34,22 @@ get_participant <- function(life_type = c("Current", "Replacement")) {
   if (life_type == "Current") {
     list(
       life_type      = "Current",
-      entry_age      = 30,
-      current_age    = 45,
-      current_salary = 75000
+      entry_age      = 20,
+      current_age    = 24,
+      current_salary = 125593
     )
   } else {
     list(
       life_type      = "Replacement",
-      entry_age      = 25,
-      current_age    = 25,
-      current_salary = 55000
+      entry_age      = 20,
+      current_age    = 24,
+      current_salary = 125593
     )
   }
 }
 
 # ---------------------------------------------------------------------------
-# 3. DECREMENT TABLES (illustrative, ages 20-110)
+# 3. DECREMENT TABLES (illustrative, ages 20-120)
 #    - qx_mort : pre-retirement mortality
 #    - qx_term : withdrawal / termination (stops at age 60)
 #    - qx_dis  : disability incidence
