@@ -34,7 +34,7 @@ get_participant <- function(life_type = c("Current", "Replacement")) {
   if (life_type == "Current") {
     list(
       life_type      = "Current",
-      entry_age      = 20,
+      entry_age      = 24,
       current_age    = 24,
       current_salary = 125593
     )
@@ -57,32 +57,43 @@ get_participant <- function(life_type = c("Current", "Replacement")) {
 #    - qx_post : post-retirement / disabled mortality (for annuity factors)
 # ---------------------------------------------------------------------------
 
-build_decrement_table <- function() {
-  ages <- 20:MAX_AGE
-  df <- data.frame(age = ages)
-
-  df$qx_mort <- pmin(0.0004 * exp(0.075 * (df$age - 20)), 1)
-
-  df$qx_term <- ifelse(df$age < 60, pmax(0.15 - 0.0045 * (df$age - 20), 0.01), 0)
-
-  df$qx_dis <- pmin(0.00015 + 0.00006 * pmax(df$age - 20, 0), 0.02)
-
-  # Retirement rates: only "live" ages 55-75, forced retirement (q=1) at 75
-  ret_ages <- 55:75
-  ret_rates <- c(0.05, 0.05, 0.05, 0.08, 0.08, 0.10, 0.10, 0.15, 0.15, 0.20,
-                 0.25,           # age 65 - NRA spike
-                 0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.15,
-                 1.00)           # age 75 - forced retirement
-  df$qx_ret <- 0
-  df$qx_ret[match(ret_ages, df$age)] <- ret_rates
-
-  # Post-retirement / disabled-life mortality (heavier than active mortality)
-  df$qx_post <- pmin(0.0009 * exp(0.09 * (df$age - 20)), 1)
-
-  df
+# Active decrements
+build_active_decrement_table <- function() {
+  ages <- 20:75
+  df_active <- data.frame(age = ages)
+  df_active$qx_ret <- c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.26, 0.14, 0.135, 0.135, 0.135, 0.175, 0.12, 0.12, 0.25, 0.25, 0.27, 0.27, 0.27, 0.27, 0.28, 0.4, 0.4, 0.4, 0.4, 0.4, 1)
+  df_active$qx_mort <- c(0.000370, 0.000357, 0.000333, 0.000309, 0.000284, 0.000281, 0.000314, 0.000336, 0.000358, 0.000394, 0.000416, 0.000451, 0.000471, 0.000503, 0.000531, 0.000570, 0.000589, 0.000616, 0.000636, 0.000662, 0.000680, 0.000692, 0.000708, 0.000729, 0.000745, 0.000767, 0.000795, 0.000820, 0.000852, 0.000884, 0.000925, 0.000973, 0.001024, 0.001084, 0.001153, 0.001232, 0.001320, 0.001416, 0.001519, 0.001626, 0.001741, 0.001861, 0.001983, 0.002108, 0.002245, 0.002376, 0.002519, 0.002661, 0.002816, 0.003004, 0.003201, 0.003422, 0.003685, 0.003969, 0.004302, 0.004302)
+  df_active$qx_dis <- c(0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000060, 0.000060, 0.000060, 0.000060, 0.000060, 0.000120, 0.000120, 0.000120, 0.000120, 0.000120, 0.000120, 0.000120, 0.000120, 0.000120, 0.000120, 0.000180, 0.000180, 0.000240, 0.000240, 0.000240, 0.000300, 0.000300, 0.000360, 0.000420, 0.000480, 0.000540, 0.000660, 0.000840, 0.000900, 0.001080, 0.001260, 0.001440, 0.001620, 0.001860, 0.002100, 0.002400, 0.002640, 0.003000, 0.003360, 0.003480, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000)
+  df_active$qx_turn <- c(0.0925, 0.0425, 0.0325, 0.0325, 0.0225, 0.0175, 0.015, 0.015, 0.015, 0.0125, 0.0075, 0.0075, 0.0075, 0.0075, 0.0075, 0.007, 0.007, 0.007, 0.007, 0.007, 0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+  df_active
 }
 
-DECR <- build_decrement_table()
+#build_decrement_table <- function() {
+  #ages <- 20:MAX_AGE
+  #df <- data.frame(age = ages)
+
+  #df$qx_mort <- pmin(0.0004 * exp(0.075 * (df$age - 20)), 1)
+
+  #df$qx_term <- ifelse(df$age < 60, pmax(0.15 - 0.0045 * (df$age - 20), 0.01), 0)
+
+  #df$qx_dis <- pmin(0.00015 + 0.00006 * pmax(df$age - 20, 0), 0.02)
+
+  # Retirement rates: only "live" ages 55-75, forced retirement (q=1) at 75
+  #ret_ages <- 55:75
+  #ret_rates <- c(0.26, 0.14, 0.135, 0.135, 0.135, 0.175, 0.12, 0.12, 0.25, 0.25,
+                 #0.27,           # age 65 - NRA spike
+                 #0.27, 0.27, 0.27, 0.28, 0.4, 0.4, 0.4, 0.4, 0.4,
+                 #1.00)           # age 75 - forced retirement
+  #df$qx_ret <- 0
+  #df$qx_ret[match(ret_ages, df$age)] <- ret_rates
+
+  # Post-retirement / disabled-life mortality (heavier than active mortality)
+  #df$qx_post <- pmin(0.0009 * exp(0.09 * (df$age - 20)), 1)
+
+  #df
+#}
+
+DECR <- build_active_decrement_table()
 
 decrement_row <- function(age) DECR[DECR$age == age, ]
 
