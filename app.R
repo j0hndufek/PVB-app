@@ -1,3 +1,4 @@
+App · R
 # ============================================================================
 # Pension Valuation Trainer — Present Value of Benefits (PVB)
 #
@@ -5,22 +6,24 @@
 # see the PVB formula for that benefit laid out age-by-age, then click any
 # component of that formula to see how it was built up.
 #
-# ALL ASSUMPTIONS ARE ILLUSTRATIVE — see actuarial_engine.R. 
+# ALL ASSUMPTIONS ARE ILLUSTRATIVE — see actuarial_engine.R. Swap in your
+# firm's real decrement tables, salary scale, benefit formula, etc. before
+# using this for anything beyond training.
 # ============================================================================
-
+ 
 library(shiny)
 library(DT)
 library(dplyr)
-
+ 
 source("actuarial_engine.R")
-
+ 
 # ---------------------------------------------------------------------------
 # Formatting helpers
 # ---------------------------------------------------------------------------
 fmt_dollar <- function(x, digits = 0) paste0("$", formatC(x, format = "f", digits = digits, big.mark = ","))
 fmt_pct    <- function(x, digits = 2) paste0(formatC(100 * x, format = "f", digits = digits), "%")
 fmt_num    <- function(x, digits = 4) formatC(x, format = "f", digits = digits)
-
+ 
 # Column metadata per benefit type: label + formatting type, in display order
 COLUMN_META <- list(
   Retirement = list(
@@ -64,7 +67,7 @@ COLUMN_META <- list(
     pvb                      = list(label = "PVB",                     type = "dollar")
   )
 )
-
+ 
 get_full_table <- function(benefit_type, participant) {
   switch(benefit_type,
     "Retirement"           = build_retirement_table(participant),
@@ -73,11 +76,11 @@ get_full_table <- function(benefit_type, participant) {
     "Vested / Terminated"  = build_vested_term_table(participant)
   )
 }
-
+ 
 # ---------------------------------------------------------------------------
 # UI
 # ---------------------------------------------------------------------------
-
+ 
 ui <- fluidPage(
   title = "Pension Valuation Trainer",
   tags$head(tags$style(HTML("
@@ -88,10 +91,10 @@ ui <- fluidPage(
     .hint-text { color: #6b7280; font-size: 12px; margin-top: 6px; }
     table.dataTable td { cursor: pointer; }
   "))),
-
+ 
   titlePanel("Pension Valuation Trainer: Present Value of Benefits (PVB)"),
-
-
+  p(em("Illustrative assumptions for training purposes only — not your firm's actual assumption set.")),
+ 
   fluidRow(
     column(
       width = 3,
@@ -108,7 +111,7 @@ ui <- fluidPage(
                       selected = "Retirement")
       )
     ),
-
+ 
     column(
       width = 9,
       wellPanel(
@@ -125,17 +128,17 @@ ui <- fluidPage(
     )
   )
 )
-
+ 
 # ---------------------------------------------------------------------------
 # SERVER
 # ---------------------------------------------------------------------------
-
+ 
 server <- function(input, output, session) {
-
+ 
   participant <- reactive({ get_participant(input$life_type) })
-
+ 
   full_table <- reactive({ get_full_table(input$benefit_type, participant()) })
-
+ 
   # Reset the drill-down selection whenever the inputs change
   observeEvent(list(input$life_type, input$benefit_type), {
     output$bottom_formula <- renderUI(
@@ -143,7 +146,7 @@ server <- function(input, output, session) {
     )
     output$component_table <- renderDT(NULL)
   })
-
+ 
   # ---- TOP PANEL: overall formula + benefit-specific formula ----
   output$top_formula <- renderUI({
     bt <- input$benefit_type
@@ -154,14 +157,14 @@ server <- function(input, output, session) {
       if (t == bt) paste0("\\mathbf{", label, "}") else label
     })
     top_eq <- paste0("\\[PVB = ", paste(term_strs, collapse = " + "), "\\]")
-
+ 
     formula_specific <- switch(bt,
       "Retirement" = "\\[PVB_{Retirement} = \\sum_{r=55}^{75} \\Big(JS_r + LA_r\\Big) \\times q^{(r)}_{r} \\times {}_{r-e}p^{(\\tau)}_{e} \\times v^{\\,r-e}\\]",
       "Death" = "\\[PVB_{Death} = \\sum_{x=e}^{74} DB_x \\times q^{(d)}_{x} \\times {}_{x-e}p^{(\\tau)}_{e} \\times v^{\\,x-e}\\]",
       "Disability" = "\\[PVB_{Disability} = \\sum_{x=e}^{74} \\Big(AB_x \\times \\ddot{a}_x\\Big) \\times q^{(i)}_{x} \\times {}_{x-e}p^{(\\tau)}_{e} \\times v^{\\,x-e}\\]",
       "Vested / Terminated" = "\\[PVB_{VT} = \\sum_{x=e}^{59} \\Big(AB_x \\times \\ddot{a}_{65} \\times {}_{65-x}p_{x} \\times v^{\\,65-x}\\Big) \\times q^{(w)}_{x} \\times {}_{x-e}p^{(\\tau)}_{e} \\times v^{\\,x-e}\\]"
     )
-
+ 
     p_active <- participant()
     withMathJax(
       div(class = "formula-box",
@@ -174,14 +177,14 @@ server <- function(input, output, session) {
       )
     )
   })
-
+ 
   # ---- TOP TABLE: age-by-age breakdown ----
   output$pvb_table <- renderDT({
     bt <- input$benefit_type
     meta <- COLUMN_META[[bt]]
     df <- full_table()[, names(meta), drop = FALSE]
     colnames(df) <- sapply(meta, function(m) m$label)
-
+ 
     dt <- datatable(
       df, rownames = FALSE, selection = list(mode = "single", target = "cell"),
       options = list(paging = FALSE, searching = FALSE, ordering = FALSE,
@@ -199,7 +202,7 @@ server <- function(input, output, session) {
     last_label <- meta[[length(meta)]]$label
     dt %>% formatStyle(last_label, fontWeight = "bold") # bold PVB col
   })
-
+ 
   # ---- Click handler: figure out which component was clicked ----
   observeEvent(input$pvb_table_cell_clicked, {
     info <- input$pvb_table_cell_clicked
@@ -211,9 +214,9 @@ server <- function(input, output, session) {
     clicked_col <- col_names[info$col + 1]  # DT is 0-indexed
     row_data <- full_table()[info$row, ]
     p <- participant()
-
+ 
     result <- component_breakdown(bt, clicked_col, row_data, p)
-
+ 
     output$bottom_formula <- renderUI({
       withMathJax(
         div(class = "formula-box",
@@ -223,7 +226,7 @@ server <- function(input, output, session) {
         )
       )
     })
-
+ 
     output$component_table <- renderDT({
       if (is.null(result$table)) return(NULL)
       datatable(result$table, rownames = FALSE,
@@ -231,16 +234,16 @@ server <- function(input, output, session) {
                                 info = FALSE, dom = "t"))
     })
   })
-
+ 
   # ---------------------------------------------------------------------
   # component_breakdown(): builds the LaTeX + table for the bottom panel
   # ---------------------------------------------------------------------
   component_breakdown <- function(benefit_type, col, row, p) {
     e <- p$entry_age
     age <- row$age
-
+ 
     switch(paste(benefit_type, col, sep = "::"),
-
+ 
       # ---------------- RETIREMENT ----------------
       "Retirement::fap" = {
         yrs <- (age - 2):age
@@ -289,7 +292,7 @@ server <- function(input, output, session) {
       ),
       "Retirement::prob_retire" = ,
       "Retirement::prob_survive" = decrement_component(benefit_type, col, row, p, source_col = "qx_ret", label = "Retirement", age_range = 55:75),
-
+ 
       "Retirement::discount_factor" = discount_component(age, e),
       "Retirement::pvb" = list(
         title = sprintf("Full PVB Recomposition @ age %d", age),
@@ -300,7 +303,7 @@ server <- function(input, output, session) {
           fmt_num(row$discount_factor, 4), fmt_dollar(row$pvb)),
         table = NULL
       ),
-
+ 
       # ---------------- DEATH ----------------
       "Death::salary" = list(
         title = sprintf("Salary @ age %d", age),
@@ -326,7 +329,7 @@ server <- function(input, output, session) {
           fmt_pct(row$prob_survive, 4), fmt_num(row$discount_factor, 4), fmt_dollar(row$pvb)),
         table = NULL
       ),
-
+ 
       # ---------------- DISABILITY ----------------
       "Disability::accrued_benefit" = list(
         title = sprintf("Accrued Benefit @ age %d", age),
@@ -338,7 +341,7 @@ server <- function(input, output, session) {
         formula = sprintf("\\[DIS_{%d} = AB_{%d} \\times \\ddot{a}_{%d} = %s \\times %s = %s\\]",
                            age, age, age, fmt_dollar(row$accrued_benefit), fmt_num(row$annuity_factor, 3), fmt_dollar(row$disability_annuity_value)),
         table = NULL,
-        note = "Assumes the accrued benefit becomes payable immediately for life upon disablement, valued using the same post-decrement mortality table used for retiree annuities (simplification)."
+        note = "Assumes the accrued benefit becomes payable immediately for life upon disablement, valued using the post-decrement (POST_DECR) mortality table used for retiree annuities (simplification)."
       ),
       "Disability::prob_disability" = ,
       "Disability::prob_survive" = decrement_component(benefit_type, col, row, p, source_col = "qx_dis", label = "Disability"),
@@ -351,7 +354,7 @@ server <- function(input, output, session) {
           fmt_pct(row$prob_survive, 4), fmt_num(row$discount_factor, 4), fmt_dollar(row$pvb)),
         table = NULL
       ),
-
+ 
       # ---------------- VESTED / TERMINATED ----------------
       "Vested / Terminated::accrued_benefit_at_term" = list(
         title = sprintf("Accrued Benefit @ Termination, age %d", age),
@@ -365,7 +368,7 @@ server <- function(input, output, session) {
           age, age, 65 - age, age, 65 - age, fmt_dollar(row$accrued_benefit_at_term), fmt_num(row$annuity_factor_at_NRA, 3),
           fmt_pct(row$prob_survive_to_NRA, 3), fmt_num(row$discount_factor_to_NRA, 4), fmt_dollar(row$deferred_benefit_pv)),
         table = NULL,
-        note = "Benefit is frozen at termination and paid starting at Normal Retirement Age (65); value reflects surviving to 65 and discounting the deferral period."
+        note = "Benefit is frozen at termination and paid starting at Normal Retirement Age (65); value reflects surviving to 65 (POST_DECR mortality) and discounting the deferral period."
       ),
       "Vested / Terminated::prob_terminate" = ,
       "Vested / Terminated::prob_survive" = decrement_component(benefit_type, col, row, p, source_col = "qx_term", label = "Termination", age_range = 20:59),
@@ -378,29 +381,29 @@ server <- function(input, output, session) {
           fmt_pct(row$prob_survive, 4), fmt_num(row$discount_factor, 4), fmt_dollar(row$pvb)),
         table = NULL
       ),
-
+ 
       # ---------------- default / age column ----------------
       list(title = "No further breakdown", formula = "", table = NULL,
            note = "Select a numeric component cell (not the Age column) to see its breakdown.")
     )
   }
-
+ 
   # Shared helper: discount factor breakdown
   discount_component <- function(age, e) {
     n <- age - e
     v <- discount_factor(n)
     list(
       title = sprintf("Discount Factor (entry age %d \u2192 %d)", e, age),
-      formula = sprintf("\\[v^{%d} = \\frac{1}{(1+i)^{%d}} = \\frac{1}{(1+%.2f)^{%d}} = %s\\]",
+      formula = sprintf("\\[v^{%d} = \\frac{1}{(1+i)^{%d}} = \\frac{1}{(1+%.3f)^{%d}} = %s\\]",
                          n, n, INTEREST_RATE, n, fmt_num(v, 4)),
       table = NULL,
       note = "Valued from ENTRY AGE (Entry-Age-Normal style PVFB), not from the current valuation date -- that's why n = attained age minus entry age rather than minus current age."
     )
   }
-
+ 
   # Shared helper: decrement-rate breakdown (used for prob_retire/prob_death/
   # prob_disability/prob_terminate AND prob_survive, since both trace back to
-  # the same decrement table / survival chain)
+  # the ACTIVE_DECR table / survival chain)
   decrement_component <- function(benefit_type, col, row, p, source_col, label, age_range = NULL) {
     age <- row$age
     e <- p$entry_age
@@ -418,23 +421,23 @@ server <- function(input, output, session) {
         formula = sprintf("\\[{}_{%d}p^{(\\tau)}_{%d} = \\prod_{k=%d}^{%d} (1 - q^{(\\tau)}_k) = %s\\]",
                            age - e, e, e, age - 1, fmt_pct(row$prob_survive, 3)),
         table = chain_display,
-        note = "q^(\u03c4) is the TOTAL decrement rate (mortality + termination + disability + retirement, as applicable) — the probability of leaving active service for ANY reason at each age."
+        note = "q^(\u03c4) is the TOTAL decrement rate from ACTIVE_DECR (mortality + termination + disability + retirement, as applicable) — the probability of leaving active service for ANY reason at each age."
       )
     } else {
       lo <- max(20, age - 3); hi <- min(80, age + 3)
       if (!is.null(age_range)) { lo <- max(lo, min(age_range)); hi <- min(hi, max(age_range)) }
-      ctx <- DECR[DECR$age >= lo & DECR$age <= hi, c("age", source_col)]
+      ctx <- ACTIVE_DECR[ACTIVE_DECR$age >= lo & ACTIVE_DECR$age <= hi, c("age", source_col)]
       colnames(ctx) <- c("Age", paste0(label, " Rate"))
       ctx[[2]] <- fmt_pct(ctx[[2]], 2)
-      rate <- decrement_row(age)[[source_col]]
+      rate <- active_decrement_row(age)[[source_col]]
       list(
         title = sprintf("%s Decrement Rate @ age %d", label, age),
         formula = sprintf("\\[q^{(%s)}_{%d} = %s\\]", substr(label, 1, 1), age, fmt_pct(rate, 3)),
         table = ctx,
-        note = "Illustrative assumption table shown for nearby ages — replace with your firm's actual decrement study results."
+        note = "From ACTIVE_DECR — illustrative assumption table shown for nearby ages. Replace with your firm's actual decrement study results."
       )
     }
   }
 }
-
+ 
 shinyApp(ui, server)
