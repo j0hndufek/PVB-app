@@ -1,4 +1,3 @@
-App · R
 # ============================================================================
 # Pension Valuation Trainer — Present Value of Benefits (PVB)
 #
